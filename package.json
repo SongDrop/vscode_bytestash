@@ -5,7 +5,7 @@
   "repository": "https://github.com/SongDrop/ByteStash",
   "publisher": "songdropltd",
   "icon": "media/logo.png",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "engines": {
     "vscode": "^1.96.0"
   },

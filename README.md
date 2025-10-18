@@ -9,7 +9,7 @@ chmod +x ./vscode_install.sh
 ./vscode_install.sh
 ```
 
-It will automatically install as an vscode extension.
+It will automatically install as a vscode extension.
 Right click on the file -> Push to Bytestash
 
 In Code > Preferences > Settings

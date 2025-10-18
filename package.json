@@ -2,9 +2,9 @@
   "name": "bytestash",
   "displayName": "ByteStash",
   "description": "Upload snippets to ByteStash from VS Code",
-  "repository": "https://github.com/CppBunny/vscode_bytestash",
-  "publisher": "cppbunny",
-  "version": "0.0.4",
+  "repository": "https://github.com/SongDrop/ByteStash",
+  "publisher": "songdropltd",
+  "version": "0.0.5",
   "engines": {
     "vscode": "^1.96.0"
   },

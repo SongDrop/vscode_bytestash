@@ -72,19 +72,49 @@ echo -e "${GREEN}✅ Extension packaged: $VSIX_FILE${NC}"
 
 # --- Detect environment and install accordingly ---
 if command -v code-server &> /dev/null; then
-    # VS Code Server
+    echo -e "${YELLOW}🔧 Detected code-server environment.${NC}"
+
+    # Default locations
+    CS_USER_DATA_DIR="${HOME}/.local/share/code-server"
+    CS_EXT_DIR="${CS_USER_DATA_DIR}/extensions"
+
+    # Try to detect active code-server process and extract custom paths
+    CS_PID=$(pgrep -af "code-server" | head -n1 | awk '{print $1}')
+    if [ -n "$CS_PID" ] && ps -p "$CS_PID" > /dev/null 2>&1; then
+        CS_CMD=$(ps -p "$CS_PID" -o args=)
+        if [[ "$CS_CMD" =~ --user-data-dir[=\ ]([^[:space:]]+) ]]; then
+            CS_USER_DATA_DIR="${BASH_REMATCH[1]}"
+        fi
+        if [[ "$CS_CMD" =~ --extensions-dir[=\ ]([^[:space:]]+) ]]; then
+            CS_EXT_DIR="${BASH_REMATCH[1]}"
+        fi
+    fi
+
+    echo -e "${CYAN}📁 Using code-server data dir:${NC} $CS_USER_DATA_DIR"
+    echo -e "${CYAN}📁 Using extensions dir:${NC} $CS_EXT_DIR"
+
     echo -e "${YELLOW}🔧 Installing extension in code-server...${NC}"
-    code-server --install-extension "$VSIX_FILE" --force
-    echo -e "${GREEN}✅ ByteStash extension installed in code-server!${NC}"
-elif command -v code &> /dev/null; then
-    # Local VS Code
-    echo -e "${YELLOW}🔧 Installing extension in local VS Code...${NC}"
-    code --install-extension "$VSIX_FILE" --force
-    echo -e "${GREEN}✅ ByteStash extension installed in local VS Code!${NC}"
+    code-server --install-extension "$VSIX_FILE" \
+        --force \
+        --user-data-dir "$CS_USER_DATA_DIR" \
+        --extensions-dir "$CS_EXT_DIR"
+
+    # Verify installation
+    if code-server --list-extensions | grep -q "bytestash"; then
+        echo -e "${GREEN}✅ ByteStash extension installed in code-server!${NC}"
+    else
+        echo -e "${RED}❌ Installation command completed but ByteStash not detected.${NC}"
+        echo -e "${YELLOW}👉 Try manually running:${NC}"
+        echo "   code-server --install-extension \"$VSIX_FILE\" --force --user-data-dir \"$CS_USER_DATA_DIR\" --extensions-dir \"$CS_EXT_DIR\""
+    fi
+
 else
-    echo -e "${YELLOW}📦 Extension packaged but no VS Code CLI found.${NC}"
-    echo "   You can install manually from: $VSIX_FILE"
+    echo -e "${YELLOW}🔧 Installing extension in VS Code...${NC}"
+    code --install-extension "$VSIX_FILE" --force
+    echo -e "${GREEN}✅ ByteStash extension installed successfully!${NC}"
 fi
+
+
 
 # --- Final instructions ---
 echo ""
@@ -97,13 +127,19 @@ echo "3. Search for 'ByteStash: Push' or 'ByteStash: Push Selected'"
 echo "4. Configure extension settings under Preferences → Settings → Extensions → ByteStash"
 echo ""
 
-# Open settings page only if not code-server
-if ! command -v code-server &> /dev/null; then
+# --- Open settings page or show helpful message ---
+if command -v code-server &> /dev/null; then
+    echo -e "${CYAN}💡 You're running in VS Code Server (headless mode).${NC}"
+    echo -e "   To open ByteStash settings:"
+    echo -e "   → In your browser, open Command Palette (Ctrl+Shift+P)"
+    echo -e "   → Search for 'Preferences: Open Settings (UI)'"
+    echo -e "   → Then go to Extensions → ByteStash"
+else
     echo "🔹 Opening ByteStash settings in your active VS Code window..."
     if [[ "$OSTYPE" == "darwin"* ]]; then
         open "vscode://settings/extension/bytestash"
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        xdg-open "vscode://settings/extension/bytestash" || echo "Open VS Code settings manually: Preferences → Settings → Extensions → ByteStash"
+        xdg-open "vscode://settings/extension/bytestash" || echo "Open manually: Preferences → Settings → Extensions → ByteStash"
     elif [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
         start "" "vscode://settings/extension/bytestash"
     else

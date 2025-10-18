@@ -63,20 +63,27 @@ vsce package --allow-missing-repository
 # Detect the .vsix file dynamically
 VSIX_FILE=$(ls bytestash-*.vsix 2>/dev/null | head -n1)
 
-if [ -f "$VSIX_FILE" ]; then
-    echo -e "${GREEN}✅ Extension packaged: $VSIX_FILE${NC}"
-
-    if command -v code &> /dev/null; then
-        echo -e "${YELLOW}🔧 Installing extension in VS Code...${NC}"
-        code --install-extension "$VSIX_FILE" --force
-        echo -e "${GREEN}✅ ByteStash extension installed successfully!${NC}"
-    else
-        echo -e "${YELLOW}📦 Extension packaged but 'code' CLI not found.${NC}"
-        echo "   You can install manually from: $VSIX_FILE"
-    fi
-else
+if [ ! -f "$VSIX_FILE" ]; then
     echo -e "${RED}❌ Failed to package extension.${NC}"
     exit 1
+fi
+
+echo -e "${GREEN}✅ Extension packaged: $VSIX_FILE${NC}"
+
+# --- Detect environment and install accordingly ---
+if command -v code-server &> /dev/null; then
+    # VS Code Server
+    echo -e "${YELLOW}🔧 Installing extension in code-server...${NC}"
+    code-server --install-extension "$VSIX_FILE" --force
+    echo -e "${GREEN}✅ ByteStash extension installed in code-server!${NC}"
+elif command -v code &> /dev/null; then
+    # Local VS Code
+    echo -e "${YELLOW}🔧 Installing extension in local VS Code...${NC}"
+    code --install-extension "$VSIX_FILE" --force
+    echo -e "${GREEN}✅ ByteStash extension installed in local VS Code!${NC}"
+else
+    echo -e "${YELLOW}📦 Extension packaged but no VS Code CLI found.${NC}"
+    echo "   You can install manually from: $VSIX_FILE"
 fi
 
 # --- Final instructions ---
@@ -89,22 +96,20 @@ echo "2. Open the Command Palette (Cmd+Shift+P / Ctrl+Shift+P)"
 echo "3. Search for 'ByteStash: Push' or 'ByteStash: Push Selected'"
 echo "4. Configure extension settings under Preferences → Settings → Extensions → ByteStash"
 echo ""
-echo "🔹 Opening ByteStash settings in your active VS Code window..."
 
-# Open the settings page in the active VS Code window (cross-platform)
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    # macOS
-    open "vscode://settings/extension/bytestash"
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    # Linux
-    xdg-open "vscode://settings/extension/bytestash" || echo "Open VS Code settings manually: Preferences → Settings → Extensions → ByteStash"
-elif [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
-    # Windows
-    start "" "vscode://settings/extension/bytestash"
-else
-    echo "Open VS Code settings manually: Preferences → Settings → Extensions → ByteStash"
+# Open settings page only if not code-server
+if ! command -v code-server &> /dev/null; then
+    echo "🔹 Opening ByteStash settings in your active VS Code window..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        open "vscode://settings/extension/bytestash"
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        xdg-open "vscode://settings/extension/bytestash" || echo "Open VS Code settings manually: Preferences → Settings → Extensions → ByteStash"
+    elif [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+        start "" "vscode://settings/extension/bytestash"
+    else
+        echo "Open VS Code settings manually: Preferences → Settings → Extensions → ByteStash"
+    fi
 fi
 
 echo ""
 echo "✅ ByteStash extension ready. Use 'Cmd+Shift+P' (or 'Ctrl+Shift+P') and search for 'ByteStash: Push' or 'Push Selected'."
-
